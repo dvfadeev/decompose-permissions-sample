@@ -11,12 +11,10 @@ fun AppTheme(
     content: @Composable () -> Unit
 ) {
     val materialColors = getMaterialLightColors()
-    val additionalColors = AdditionalColors()
     val appTypography = AppTypography()
     val appShapes = AppShapes()
 
     CompositionLocalProvider(
-        LocalAdditionalColors provides additionalColors,
         LocalAppTypography provides appTypography,
         LocalAppShapes provides appShapes
     ) {
