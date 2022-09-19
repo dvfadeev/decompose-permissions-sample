@@ -1,4 +1,4 @@
-package com.decompose_permissions.sample
+package com.decomposepermissions.sample
 
 import org.junit.Test
 
