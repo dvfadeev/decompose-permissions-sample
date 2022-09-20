@@ -1,3 +1,6 @@
 package com.decomposepermissions.home.ui
 
-interface HomeComponent
+interface HomeComponent {
+
+    fun onRequestPermissionClick()
+}

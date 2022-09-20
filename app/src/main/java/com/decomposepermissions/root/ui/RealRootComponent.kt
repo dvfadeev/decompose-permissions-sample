@@ -29,7 +29,7 @@ class RealRootComponent(
 
     private fun createChild(config: Config, componentContext: ComponentContext): RootComponent.Child =
         when (config) {
-            is Config.Home -> RootComponent.Child.Home(createHomeComponent(componentContext))
+            is Config.Home -> RootComponent.Child.Home(componentFactory.createHomeComponent(componentContext))
         }
 
     private sealed class Config : Parcelable {
