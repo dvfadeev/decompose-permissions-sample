@@ -2,6 +2,7 @@ package com.decomposepermissions
 
 import com.decomposepermissions.permissions.PermissionManager
 import com.decomposepermissions.root.rootModule
+import com.decomposepermissions.utils.ActivityProvider
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -13,6 +14,5 @@ val allModules = listOf(
         single { ActivityProvider() }
         single { PermissionManager() }
     },
-    rootModule,
-  //  permissionModule
+    rootModule
 )

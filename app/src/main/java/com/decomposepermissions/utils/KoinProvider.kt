@@ -1,4 +1,4 @@
-package com.decomposepermissions
+package com.decomposepermissions.utils
 
 import android.app.Application
 import org.koin.core.Koin

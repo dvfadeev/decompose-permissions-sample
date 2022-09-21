@@ -1,7 +1,7 @@
 package com.decomposepermissions.root
 
 import com.arkivanov.decompose.ComponentContext
-import com.decomposepermissions.ComponentFactory
+import com.decomposepermissions.utils.ComponentFactory
 import com.decomposepermissions.root.ui.RealRootComponent
 import com.decomposepermissions.root.ui.RootComponent
 import org.koin.core.component.get

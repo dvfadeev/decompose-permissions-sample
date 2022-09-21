@@ -1,4 +1,4 @@
-package com.decomposepermissions
+package com.decomposepermissions.utils
 
 import org.koin.core.Koin
 import org.koin.core.component.KoinComponent

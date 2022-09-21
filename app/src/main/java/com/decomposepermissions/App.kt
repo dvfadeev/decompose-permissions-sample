@@ -1,6 +1,8 @@
 package com.decomposepermissions
 
 import android.app.Application
+import com.decomposepermissions.utils.ComponentFactory
+import com.decomposepermissions.utils.KoinProvider
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.Koin
 import org.koin.dsl.koinApplication

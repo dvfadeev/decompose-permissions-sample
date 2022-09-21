@@ -1,4 +1,4 @@
-package com.decomposepermissions
+package com.decomposepermissions.utils
 
 import androidx.activity.ComponentActivity
 import kotlinx.coroutines.flow.MutableStateFlow

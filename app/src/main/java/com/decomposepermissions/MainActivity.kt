@@ -10,6 +10,9 @@ import com.decomposepermissions.permissions.PermissionManager
 import com.decomposepermissions.root.createRootComponent
 import com.decomposepermissions.root.ui.RootComponent
 import com.decomposepermissions.root.ui.RootUi
+import com.decomposepermissions.utils.ActivityProvider
+import com.decomposepermissions.utils.ComponentFactory
+import com.decomposepermissions.utils.koin
 
 class MainActivity : ComponentActivity() {
 
