@@ -18,10 +18,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.decomposepermissions.R
 import com.decomposepermissions.theme.AppTheme
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.flowOf
 
 @Composable
 fun HomeUi(
@@ -56,7 +54,7 @@ private fun Content(
     val context = LocalContext.current
     LaunchedEffect(key1 = Unit) {
         showToastEvent.collectLatest {
-            Toast.makeText(context, it, Toast.LENGTH_SHORT)
+            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -71,7 +69,7 @@ private fun Content(
                 text = stringResource(id = R.string.request_permission_btn)
             )
         }
-        Button(onClick = { /*TODO*/ }) {
+        Button(onClick = onRequestMultiplePermission) {
             Text(
                 text = stringResource(id = R.string.request_multiple_permission_btn)
             )

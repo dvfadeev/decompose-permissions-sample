@@ -13,8 +13,6 @@ class RealHomeComponent(
     private val permissionManager: PermissionManager
 ) : ComponentContext by componentContext, HomeComponent {
 
-    private val q: MutableValue<String> = MutableValue("sda")
-
     override val showToastEvent: MutableSharedFlow<String> = MutableSharedFlow()
 
     override fun onRequestPermissionClick() {
@@ -29,7 +27,22 @@ class RealHomeComponent(
     }
 
     override fun onRequestMultiplePermission() {
-        TODO("Not yet implemented")
+        permissionManager.requestPermission(Manifest.permission.CAMERA)
+            .onGranted {
+                showToast("Camera: granted")
+            }.onDenied {
+                showToast("Camera: denied")
+            }.onAutoDenied {
+                showToast("Camera: auto denied")
+            }
+        permissionManager.requestPermission(Manifest.permission.READ_CONTACTS)
+            .onGranted {
+                showToast("Contacts: granted")
+            }.onDenied {
+                showToast("Contacts: denied")
+            }.onAutoDenied {
+                showToast("Contacts: auto denied")
+            }
     }
 
     private fun showToast(text: String) {
