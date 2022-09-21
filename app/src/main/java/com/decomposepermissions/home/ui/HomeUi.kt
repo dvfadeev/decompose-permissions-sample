@@ -1,5 +1,6 @@
 package com.decomposepermissions.home.ui
 
+import android.widget.Toast
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -8,13 +9,19 @@ import androidx.compose.material.Scaffold
 import androidx.compose.material.Text
 import androidx.compose.material.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.decomposepermissions.R
 import com.decomposepermissions.theme.AppTheme
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.flowOf
 
 @Composable
 fun HomeUi(
@@ -32,7 +39,9 @@ fun HomeUi(
         },
         content = {
             Content(
-                onRequestPermission = component::onRequestPermissionClick
+                showToastEvent = component.showToastEvent,
+                onRequestPermission = component::onRequestPermissionClick,
+                onRequestMultiplePermission = component::onRequestMultiplePermission
             )
         }
     )
@@ -40,8 +49,17 @@ fun HomeUi(
 
 @Composable
 private fun Content(
-    onRequestPermission: () -> Unit
+    showToastEvent: MutableSharedFlow<String>,
+    onRequestPermission: () -> Unit,
+    onRequestMultiplePermission: () -> Unit
 ) {
+    val context = LocalContext.current
+    LaunchedEffect(key1 = Unit) {
+        showToastEvent.collectLatest {
+            Toast.makeText(context, it, Toast.LENGTH_SHORT)
+        }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -51,6 +69,11 @@ private fun Content(
         Button(onClick = onRequestPermission) {
             Text(
                 text = stringResource(id = R.string.request_permission_btn)
+            )
+        }
+        Button(onClick = { /*TODO*/ }) {
+            Text(
+                text = stringResource(id = R.string.request_multiple_permission_btn)
             )
         }
     }
@@ -65,5 +88,10 @@ fun HomeUiPreview() {
 }
 
 class FakeHomeComponent : HomeComponent {
+
+    override val showToastEvent: MutableSharedFlow<String> = MutableSharedFlow()
+
     override fun onRequestPermissionClick() = Unit
+
+    override fun onRequestMultiplePermission() = Unit
 }
