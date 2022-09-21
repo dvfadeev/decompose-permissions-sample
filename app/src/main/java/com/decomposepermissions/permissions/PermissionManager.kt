@@ -14,6 +14,12 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 
+/**
+ * A manager that allows you to request permissions and process their result.
+ * When multiple permissions are requested, forms a queue and processes them sequentially.
+ *
+ * Must be tied to current activity.
+ */
 class PermissionManager {
 
     private var activity: ComponentActivity? = null
@@ -32,6 +38,11 @@ class PermissionManager {
     private val scope: LifecycleCoroutineScope?
         get() = activity?.lifecycleScope
 
+    /**
+     * [PermissionManager] tied to [ComponentActivity].
+     *
+     * This method must be called during activity creation.
+     */
     fun attachActivity(activity: ComponentActivity) {
         this.activity = activity
         activityResultLauncher =
@@ -42,10 +53,18 @@ class PermissionManager {
             }
     }
 
+    /**
+     * [PermissionManager] tied to [ComponentActivity].
+     *
+     * This method must be called during activity destruction.
+     */
     fun detachActivity() {
         this.activity = null
     }
 
+    /**
+     * Request permission by name from Manifest.permission.
+     */
     fun requestPermission(
         permission: String
     ): Result {
@@ -99,6 +118,11 @@ class PermissionManager {
                 }
             }
 
+        /**
+         * Perform given action when permission is granted.
+         *
+         * Returns the original Result unchanged.
+         */
         fun onGranted(action: () -> Unit): Result {
             successAction = action
             if (isGranted) {
@@ -107,11 +131,22 @@ class PermissionManager {
             return this
         }
 
+        /**
+         * Perform given action when permission is denied.
+         *
+         * Returns the original Result unchanged.
+         */
         fun onDenied(action: () -> Unit): Result {
             deniedAction = action
             return this
         }
 
+        /**
+         * Perform given action when permission is denied automatically.
+         * In cases where the user has selected "Never ask again".
+         *
+         * Returns the original Result unchanged.
+         */
         fun onAutoDenied(action: () -> Unit): Result {
             autoDeniedAction = action
             return this
