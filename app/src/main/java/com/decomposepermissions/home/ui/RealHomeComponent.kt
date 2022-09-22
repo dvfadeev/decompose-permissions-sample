@@ -8,23 +8,19 @@ import androidx.compose.runtime.mutableStateOf
 import com.arkivanov.decompose.ComponentContext
 import com.decomposepermissions.permissions.PermissionManager
 import com.decomposepermissions.utils.ActivityProvider
-import kotlinx.datetime.Clock.System
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
-
-private const val PERMISSION_READ_STORAGE = "ReadStorage"
-private const val PERMISSION_CAMERA = "Camera"
-private const val PERMISSION_READ_CONTACTS = "ReadContacts"
-
-private const val STATUS_GRANTED = "Granted"
-private const val STATUS_DENIED = "Denied"
-private const val STATUS_AUTO_DENIED = "Denied Automatically"
+import com.decomposepermissions.utils.LogData
+import com.decomposepermissions.utils.PERMISSION_CAMERA
+import com.decomposepermissions.utils.PERMISSION_READ_CONTACTS
+import com.decomposepermissions.utils.PERMISSION_READ_STORAGE
+import com.decomposepermissions.utils.STATUS_AUTO_DENIED
+import com.decomposepermissions.utils.STATUS_DENIED
+import com.decomposepermissions.utils.STATUS_GRANTED
 
 class RealHomeComponent(
     componentContext: ComponentContext,
     private val activityProvider: ActivityProvider,
-    private val permissionManager: PermissionManager
+    private val permissionManager: PermissionManager,
+    private val onOutput: (HomeComponent.Output) -> Unit
 ) : ComponentContext by componentContext, HomeComponent {
 
     override val logsState: MutableState<List<LogData>> = mutableStateOf(listOf())
@@ -47,6 +43,10 @@ class RealHomeComponent(
         )
     }
 
+    override fun onRequestPermissionFromChild() {
+        onOutput.invoke(HomeComponent.Output.MultiPaneRequested)
+    }
+
     override fun onClearAppData() {
         activityProvider.activity?.let {
             (it.getSystemService(ACTIVITY_SERVICE) as ActivityManager).clearApplicationUserData()
@@ -67,15 +67,8 @@ class RealHomeComponent(
     private fun showLog(title: String, log: String) {
         logsState.value = logsState.value.toMutableList().apply {
             add(
-                LogData("${getTimeString()}| $title $log")
+                LogData.build(title, log)
             )
         }
-    }
-
-    private val timePattern = "HH:mm:ss"
-
-    private fun getTimeString(): String {
-        val formatter = SimpleDateFormat(timePattern, Locale.getDefault())
-        return formatter.format(Date(System.now().toEpochMilliseconds()))
     }
 }

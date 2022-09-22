@@ -29,6 +29,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.decomposepermissions.R
 import com.decomposepermissions.theme.AppTheme
+import com.decomposepermissions.utils.LogData
 
 @Composable
 fun HomeUi(
@@ -49,6 +50,7 @@ fun HomeUi(
                 state = component.logsState,
                 onRequestPermission = component::onRequestPermissionClick,
                 onRequestMultiplePermission = component::onRequestMultiplePermission,
+                onRequestPermissionFromChild = component::onRequestPermissionFromChild,
                 onClearAppData = component::onClearAppData
             )
         }
@@ -60,6 +62,7 @@ private fun Content(
     state: MutableState<List<LogData>>,
     onRequestPermission: () -> Unit,
     onRequestMultiplePermission: () -> Unit,
+    onRequestPermissionFromChild: () -> Unit,
     onClearAppData: () -> Unit
 ) {
     Box(
@@ -81,7 +84,11 @@ private fun Content(
                     text = stringResource(id = R.string.request_multiple_permission_btn)
                 )
             }
-
+            Button(onClick = onRequestPermissionFromChild) {
+                Text(
+                    text = stringResource(id = R.string.request_permission_from_child_btn)
+                )
+            }
             Button(
                 onClick = onClearAppData,
                 modifier = Modifier.padding(top = 64.dp)
@@ -154,6 +161,8 @@ class FakeHomeComponent : HomeComponent {
     override fun onRequestPermissionClick() = Unit
 
     override fun onRequestMultiplePermission() = Unit
+
+    override fun onRequestPermissionFromChild() = Unit
 
     override fun onClearAppData() = Unit
 }

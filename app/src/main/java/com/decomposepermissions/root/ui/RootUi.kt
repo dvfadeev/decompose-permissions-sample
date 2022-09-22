@@ -11,6 +11,7 @@ import com.arkivanov.decompose.value.MutableValue
 import com.arkivanov.decompose.value.Value
 import com.decomposepermissions.home.ui.FakeHomeComponent
 import com.decomposepermissions.home.ui.HomeUi
+import com.decomposepermissions.multipane.ui.MultiPaneUi
 import com.decomposepermissions.root.ui.RootComponent.Child
 import com.decomposepermissions.theme.AppTheme
 
@@ -25,6 +26,7 @@ fun RootUi(
             Children(stack = component.childStack) { child ->
                 when (val instance = child.instance) {
                     is Child.Home -> HomeUi(component = instance.component)
+                    is Child.MultiPane -> MultiPaneUi(component = instance.component)
                 }
             }
         }
