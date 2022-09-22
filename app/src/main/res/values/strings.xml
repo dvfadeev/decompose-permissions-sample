@@ -1,12 +1,10 @@
 <resources>
-    <string name="app_name">decompose-permissions-sample</string>
-    <string name="action_settings">Settings</string>
-    <!-- Strings used for fragments for navigation -->
-    <string name="first_fragment_label">First Fragment</string>
-    <string name="second_fragment_label">Second Fragment</string>
-    <string name="next">Next</string>
-    <string name="previous">Previous</string>
+    <string name="app_name">Decompose Permissions Sample</string>
 
-    <string name="hello_first_fragment">Hello first fragment</string>
-    <string name="hello_second_fragment">Hello second fragment. Arg: %1$s</string>
+    <string name="home_title">Home</string>
+    <string name="request_permission_btn">Request permission</string>
+    <string name="request_multiple_permission_btn">Request multiple permission</string>
+    <string name="request_permission_from_child_btn">Request permission from child</string>
+    <string name="clear_app_data">Clear app data (requires restart)</string>
+    <string name="multi_pane_title">Multi Pane</string>
 </resources>

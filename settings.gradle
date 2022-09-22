@@ -5,11 +5,52 @@ pluginManagement {
         mavenCentral()
     }
 }
+
+enableFeaturePreview('VERSION_CATALOGS')
+
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
         google()
         mavenCentral()
+    }
+
+    versionCatalogs {
+        libs {
+            // Kotlin
+            version('kotlin', '1.6.10')
+            alias('kotlin-plugin').to('org.jetbrains.kotlin', 'kotlin-gradle-plugin').versionRef('kotlin')
+            alias('kotlin-datetime').to('org.jetbrains.kotlinx', 'kotlinx-datetime').version('0.4.0')
+
+            version('coroutines', '1.6.4')
+            alias('coroutines-core').to('org.jetbrains.kotlinx', 'kotlinx-coroutines-core').versionRef('coroutines')
+            alias('coroutines-android').to('org.jetbrains.kotlinx', 'kotlinx-coroutines-android').versionRef('coroutines')
+
+            // UI
+            version('compose', '1.2.1')
+            alias('compose-ui').to('androidx.compose.ui', 'ui').versionRef('compose')
+            alias('compose-material').to('androidx.compose.material', 'material').versionRef('compose')
+            alias('compose-preview').to('androidx.compose.ui', 'ui-tooling-preview').versionRef('compose')
+            alias('compose-tooling').to('androidx.compose.ui', 'ui-tooling').versionRef('compose')
+            alias('activity-compose').to('androidx.activity', 'activity-compose').version('1.5.1')
+            alias('appcompat').to('androidx.appcompat', 'appcompat').version('1.5.1')
+
+
+            // Decompose
+            version('decompose', '1.0.0-alpha-04')
+            alias('decompose-core').to('com.arkivanov.decompose', 'decompose').versionRef('decompose')
+            alias('decompose-compose').to('com.arkivanov.decompose', 'extensions-compose-jetpack').versionRef('decompose')
+            bundle('decompose', ['decompose-core', 'decompose-compose'])
+
+            // DI
+            alias('koin-android').to('io.insert-koin', 'koin-android').version('3.2.1')
+
+            // Debugging
+            alias('timber').to('com.jakewharton.timber', 'timber').version('5.0.1')
+
+            // Testing
+            alias('junit').to('junit', 'junit').version('4.13.2')
+        }
     }
 }
 rootProject.name = "decompose-permissions-sample"
