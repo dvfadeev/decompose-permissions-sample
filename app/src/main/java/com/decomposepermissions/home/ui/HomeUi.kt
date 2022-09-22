@@ -1,3 +1,5 @@
+@file:Suppress("FunctionNaming")
+
 package com.decomposepermissions.home.ui
 
 import androidx.compose.foundation.layout.Box
@@ -57,6 +59,7 @@ fun HomeUi(
     )
 }
 
+@Suppress("MagicNumber")
 @Composable
 private fun Content(
     state: MutableState<List<LogData>>,
@@ -74,38 +77,23 @@ private fun Content(
             modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Button(onClick = onRequestPermission) {
-                Text(
-                    text = stringResource(id = R.string.request_permission_btn)
-                )
-            }
-            Button(onClick = onRequestMultiplePermission) {
-                Text(
-                    text = stringResource(id = R.string.request_multiple_permission_btn)
-                )
-            }
-            Button(onClick = onRequestPermissionFromChild) {
-                Text(
-                    text = stringResource(id = R.string.request_permission_from_child_btn)
-                )
-            }
-            Button(
+            MenuButton(onClick = onRequestPermission, textResource = R.string.request_permission_btn)
+            MenuButton(onClick = onRequestMultiplePermission, textResource = R.string.request_multiple_permission_btn)
+            MenuButton(
+                onClick = onRequestPermissionFromChild,
+                textResource = R.string.request_permission_from_child_btn
+            )
+            MenuButton(
                 onClick = onClearAppData,
-                modifier = Modifier.padding(top = 64.dp)
-            ) {
-                Text(
-                    text = stringResource(id = R.string.clear_app_data)
-                )
-            }
-
+                textResource = R.string.clear_app_data,
+                modifier = Modifier.padding(top = 96.dp)
+            )
         }
 
         val scrollState = rememberLazyListState()
-
         LaunchedEffect(state.value.size) {
             scrollState.animateScrollToItem(state.value.size)
         }
-
         LazyColumn(
             state = scrollState,
             userScrollEnabled = false,
@@ -130,7 +118,23 @@ private fun Content(
 }
 
 @Composable
-fun LogContent(
+private fun MenuButton(
+    onClick: () -> Unit,
+    textResource: Int,
+    modifier: Modifier = Modifier
+) {
+    Button(
+        onClick = onClick,
+        modifier = modifier
+    ) {
+        Text(
+            text = stringResource(id = textResource)
+        )
+    }
+}
+
+@Composable
+private fun LogContent(
     data: LogData,
     modifier: Modifier = Modifier
 ) {
@@ -152,6 +156,7 @@ fun HomeUiPreview() {
 
 class FakeHomeComponent : HomeComponent {
 
+    @Suppress("MagicNumber")
     override val logsState: MutableState<List<LogData>> = mutableStateOf(
         MutableList(5) {
             LogData("Sample")

@@ -1,9 +1,12 @@
+@file:Suppress("MatchingDeclarationName")
+
 package com.decomposepermissions.theme
 
 import androidx.compose.material.Colors
 import androidx.compose.material.lightColors
 import androidx.compose.ui.graphics.Color
 
+@Suppress("MagicNumber")
 object RawColors {
     val grayA: Color = Color(0xFF9E9E9E)
     val grayB: Color = Color(0xFF616161)

@@ -1,3 +1,5 @@
+@file:Suppress("FunctionNaming")
+
 package com.decomposepermissions.root.ui
 
 import androidx.compose.material.Surface
@@ -33,6 +35,7 @@ fun RootUi(
     }
 }
 
+@OptIn(ExperimentalDecomposeApi::class)
 @Preview(showSystemUi = true)
 @Composable
 fun RootUiPreview() {

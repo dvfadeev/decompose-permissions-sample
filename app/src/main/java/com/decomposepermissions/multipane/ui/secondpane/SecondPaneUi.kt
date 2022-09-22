@@ -1,3 +1,5 @@
+@file:Suppress("FunctionNaming")
+
 package com.decomposepermissions.multipane.ui.secondpane
 
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -33,13 +35,13 @@ fun SecondPaneUi(
 }
 
 @Composable
-fun LogContent(
+private fun LogContent(
     data: LogData,
     modifier: Modifier = Modifier
 ) {
     Text(
         text = data.log,
-        style = MaterialTheme.appTypography.captionA,
+        style = MaterialTheme.appTypography.caption,
         modifier = modifier
             .fillMaxWidth()
             .padding(top = 8.dp)

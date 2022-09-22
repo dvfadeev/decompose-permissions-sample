@@ -1,3 +1,5 @@
+@file:Suppress("FunctionNaming")
+
 package com.decomposepermissions.multipane.ui
 
 import android.app.Activity
@@ -20,6 +22,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.arkivanov.decompose.ExperimentalDecomposeApi
 import com.arkivanov.decompose.extensions.compose.jetpack.stack.Children
 import com.arkivanov.decompose.router.stack.ChildStack
 import com.arkivanov.decompose.value.MutableValue
@@ -33,6 +36,7 @@ import com.decomposepermissions.multipane.ui.secondpane.FakeSecondPaneComponent
 import com.decomposepermissions.multipane.ui.secondpane.SecondPaneUi
 import com.decomposepermissions.theme.AppTheme
 
+@OptIn(ExperimentalDecomposeApi::class)
 @Composable
 fun MultiPaneUi(
     component: MultiPaneComponent,

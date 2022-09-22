@@ -21,11 +21,10 @@ private val roboto = FontFamily(
 
 @Immutable
 data class AppTypography constructor(
-    val bodyA: TextStyle,
-    val bodyAMedium: TextStyle,
-    val captionA: TextStyle,
-    val captionAMedium: TextStyle,
-    val headerA: TextStyle
+    val body: TextStyle,
+    val bodyMedium: TextStyle,
+    val caption: TextStyle,
+    val header: TextStyle
 ) {
     constructor(
         defaultFontFamily: FontFamily = FontFamily.Default,
@@ -41,12 +40,6 @@ data class AppTypography constructor(
             letterSpacing = 0.5.sp,
             lineHeight = 18.75.sp
         ),
-        captionA: TextStyle = TextStyle(
-            fontWeight = FontWeight.Normal,
-            fontSize = 12.sp,
-            letterSpacing = 0.4.sp,
-            lineHeight = 14.06.sp
-        ),
         captionAMedium: TextStyle = TextStyle(
             fontWeight = FontWeight.Medium,
             fontSize = 12.sp,
@@ -60,21 +53,19 @@ data class AppTypography constructor(
             lineHeight = 28.13.sp
         )
     ) : this(
-        bodyA = bodyA.withDefaultFontFamily(defaultFontFamily),
-        bodyAMedium = bodyAMedium.withDefaultFontFamily(defaultFontFamily),
-        captionA = captionA.withDefaultFontFamily(defaultFontFamily),
-        captionAMedium = captionAMedium.withDefaultFontFamily(defaultFontFamily),
-        headerA = headerA.withDefaultFontFamily(defaultFontFamily)
+        body = bodyA.withDefaultFontFamily(defaultFontFamily),
+        bodyMedium = bodyAMedium.withDefaultFontFamily(defaultFontFamily),
+        caption = captionAMedium.withDefaultFontFamily(defaultFontFamily),
+        header = headerA.withDefaultFontFamily(defaultFontFamily)
     )
 }
 
 fun AppTypography.toMaterialTypography(): Typography {
     return Typography(
-        button = bodyAMedium,
-        h6 = headerA,
-        body1 = bodyA,
-        caption = captionAMedium,
-        subtitle1 = bodyAMedium,
+        button = bodyMedium,
+        h6 = header,
+        body1 = body,
+        caption = caption
     )
 }
 

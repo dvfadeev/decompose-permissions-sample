@@ -25,7 +25,7 @@ class RealRootComponent(
             source = navigation,
             initialConfiguration = Config.Home,
             handleBackButton = true,
-            childFactory = ::createChild,
+            childFactory = ::createChild
         )
 
     override val childStack: Value<ChildStack<*, RootComponent.Child>> get() = stack

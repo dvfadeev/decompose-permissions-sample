@@ -1,3 +1,5 @@
+@file:Suppress("FunctionNaming")
+
 package com.decomposepermissions.theme
 
 import android.annotation.SuppressLint
