@@ -48,7 +48,8 @@ fun HomeUi(
             Content(
                 state = component.logsState,
                 onRequestPermission = component::onRequestPermissionClick,
-                onRequestMultiplePermission = component::onRequestMultiplePermission
+                onRequestMultiplePermission = component::onRequestMultiplePermission,
+                onClearAppData = component::onClearAppData
             )
         }
     )
@@ -58,7 +59,8 @@ fun HomeUi(
 private fun Content(
     state: MutableState<List<LogData>>,
     onRequestPermission: () -> Unit,
-    onRequestMultiplePermission: () -> Unit
+    onRequestMultiplePermission: () -> Unit,
+    onClearAppData: () -> Unit
 ) {
     Box(
         modifier = Modifier
@@ -79,6 +81,16 @@ private fun Content(
                     text = stringResource(id = R.string.request_multiple_permission_btn)
                 )
             }
+
+            Button(
+                onClick = onClearAppData,
+                modifier = Modifier.padding(top = 64.dp)
+            ) {
+                Text(
+                    text = stringResource(id = R.string.clear_app_data)
+                )
+            }
+
         }
 
         val scrollState = rememberLazyListState()
@@ -142,4 +154,6 @@ class FakeHomeComponent : HomeComponent {
     override fun onRequestPermissionClick() = Unit
 
     override fun onRequestMultiplePermission() = Unit
+
+    override fun onClearAppData() = Unit
 }

@@ -33,7 +33,7 @@ class PermissionManager {
     private var permissionCollectJob: Job? = null
 
     private val prefs: SharedPreferences?
-        get() = activity?.getPreferences(Context.MODE_PRIVATE)
+        get() = activity?.getSharedPreferences("prefs", Context.MODE_PRIVATE)
 
     private val scope: LifecycleCoroutineScope?
         get() = activity?.lifecycleScope
@@ -171,14 +171,14 @@ class PermissionManager {
                     if (it[permission] == true) {
                         successAction?.invoke()
                     } else {
-                        if (isFirstRun) {
-                            isFirstRun = false
-                        }
                         val isNeverAskAgain = !isFirstRun && !isGranted && !isShowRationale
                         if (isNeverAskAgain) {
                             autoDeniedAction?.invoke()
                         } else {
                             deniedAction?.invoke()
+                        }
+                        if (isFirstRun) {
+                            isFirstRun = false
                         }
                     }
                 }

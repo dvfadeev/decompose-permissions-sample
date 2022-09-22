@@ -1,10 +1,13 @@
 package com.decomposepermissions.home.ui
 
 import android.Manifest
+import android.app.ActivityManager
+import android.content.Context.ACTIVITY_SERVICE
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import com.arkivanov.decompose.ComponentContext
 import com.decomposepermissions.permissions.PermissionManager
+import com.decomposepermissions.utils.ActivityProvider
 import kotlinx.datetime.Clock.System
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -20,6 +23,7 @@ private const val STATUS_AUTO_DENIED = "Denied Automatically"
 
 class RealHomeComponent(
     componentContext: ComponentContext,
+    private val activityProvider: ActivityProvider,
     private val permissionManager: PermissionManager
 ) : ComponentContext by componentContext, HomeComponent {
 
@@ -41,6 +45,12 @@ class RealHomeComponent(
             Manifest.permission.READ_CONTACTS,
             PERMISSION_READ_CONTACTS
         )
+    }
+
+    override fun onClearAppData() {
+        activityProvider.activity?.let {
+            (it.getSystemService(ACTIVITY_SERVICE) as ActivityManager).clearApplicationUserData()
+        }
     }
 
     private fun requestPermission(permission: String, logTitle: String) {

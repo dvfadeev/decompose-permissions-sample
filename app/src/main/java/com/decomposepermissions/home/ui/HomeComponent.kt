@@ -9,4 +9,6 @@ interface HomeComponent {
     fun onRequestPermissionClick()
 
     fun onRequestMultiplePermission()
+
+    fun onClearAppData()
 }

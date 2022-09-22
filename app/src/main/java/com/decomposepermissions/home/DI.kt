@@ -7,5 +7,5 @@ import com.decomposepermissions.home.ui.RealHomeComponent
 import org.koin.core.component.get
 
 fun ComponentFactory.createHomeComponent(componentContext: ComponentContext): HomeComponent {
-    return RealHomeComponent(componentContext, get())
+    return RealHomeComponent(componentContext, get(), get())
 }
