@@ -1,25 +1,34 @@
 package com.decomposepermissions.home.ui
 
-import android.widget.Toast
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.Button
 import androidx.compose.material.Scaffold
 import androidx.compose.material.Text
 import androidx.compose.material.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.decomposepermissions.R
 import com.decomposepermissions.theme.AppTheme
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.collectLatest
 
 @Composable
 fun HomeUi(
@@ -37,7 +46,7 @@ fun HomeUi(
         },
         content = {
             Content(
-                showToastEvent = component.showToastEvent,
+                state = component.logsState,
                 onRequestPermission = component::onRequestPermissionClick,
                 onRequestMultiplePermission = component::onRequestMultiplePermission
             )
@@ -47,34 +56,71 @@ fun HomeUi(
 
 @Composable
 private fun Content(
-    showToastEvent: MutableSharedFlow<String>,
+    state: MutableState<List<LogData>>,
     onRequestPermission: () -> Unit,
     onRequestMultiplePermission: () -> Unit
 ) {
-    val context = LocalContext.current
-    LaunchedEffect(key1 = Unit) {
-        showToastEvent.collectLatest {
-            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
-        }
-    }
-
-    Column(
+    Box(
         modifier = Modifier
-            .fillMaxWidth()
+            .fillMaxSize()
             .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Button(onClick = onRequestPermission) {
-            Text(
-                text = stringResource(id = R.string.request_permission_btn)
-            )
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Button(onClick = onRequestPermission) {
+                Text(
+                    text = stringResource(id = R.string.request_permission_btn)
+                )
+            }
+            Button(onClick = onRequestMultiplePermission) {
+                Text(
+                    text = stringResource(id = R.string.request_multiple_permission_btn)
+                )
+            }
         }
-        Button(onClick = onRequestMultiplePermission) {
-            Text(
-                text = stringResource(id = R.string.request_multiple_permission_btn)
-            )
+
+        val scrollState = rememberLazyListState()
+
+        LaunchedEffect(state.value.size) {
+            scrollState.animateScrollToItem(state.value.size)
+        }
+
+        LazyColumn(
+            state = scrollState,
+            userScrollEnabled = false,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .heightIn(0.dp, 150.dp)
+                .graphicsLayer { alpha = 0.99f }
+                .drawWithContent {
+                    val colors = listOf(Color.Transparent, Color.Black)
+                    drawContent()
+                    drawRect(
+                        brush = Brush.verticalGradient(colors),
+                        blendMode = BlendMode.DstIn
+                    )
+                }
+        ) {
+            items(state.value) {
+                LogContent(data = it)
+            }
         }
     }
+}
+
+@Composable
+fun LogContent(
+    data: LogData,
+    modifier: Modifier = Modifier
+) {
+    Text(
+        text = data.log,
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(top = 12.dp)
+    )
 }
 
 @Preview(showSystemUi = true)
@@ -87,7 +133,11 @@ fun HomeUiPreview() {
 
 class FakeHomeComponent : HomeComponent {
 
-    override val showToastEvent: MutableSharedFlow<String> = MutableSharedFlow()
+    override val logsState: MutableState<List<LogData>> = mutableStateOf(
+        MutableList(5) {
+            LogData("Sample")
+        }
+    )
 
     override fun onRequestPermissionClick() = Unit
 

@@ -1,53 +1,71 @@
 package com.decomposepermissions.home.ui
 
 import android.Manifest
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.mutableStateOf
 import com.arkivanov.decompose.ComponentContext
-import com.arkivanov.decompose.value.MutableValue
 import com.decomposepermissions.permissions.PermissionManager
-import com.decomposepermissions.utils.componentCoroutineScope
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.launch
+import kotlinx.datetime.Clock.System
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+
+private const val PERMISSION_READ_STORAGE = "ReadStorage"
+private const val PERMISSION_CAMERA = "Camera"
+private const val PERMISSION_READ_CONTACTS = "ReadContacts"
+
+private const val STATUS_GRANTED = "Granted"
+private const val STATUS_DENIED = "Denied"
+private const val STATUS_AUTO_DENIED = "Denied Automatically"
 
 class RealHomeComponent(
     componentContext: ComponentContext,
     private val permissionManager: PermissionManager
 ) : ComponentContext by componentContext, HomeComponent {
 
-    override val showToastEvent: MutableSharedFlow<String> = MutableSharedFlow()
+    override val logsState: MutableState<List<LogData>> = mutableStateOf(listOf())
 
     override fun onRequestPermissionClick() {
-        permissionManager.requestPermission(Manifest.permission.READ_EXTERNAL_STORAGE)
-            .onGranted {
-                showToast("Granted")
-            }.onDenied {
-                showToast("Denied")
-            }.onAutoDenied {
-                showToast("AutoDenied")
-            }
+        requestPermission(
+            Manifest.permission.READ_EXTERNAL_STORAGE,
+            PERMISSION_READ_STORAGE
+        )
     }
 
     override fun onRequestMultiplePermission() {
-        permissionManager.requestPermission(Manifest.permission.CAMERA)
+        requestPermission(
+            Manifest.permission.CAMERA,
+            PERMISSION_CAMERA
+        )
+        requestPermission(
+            Manifest.permission.READ_CONTACTS,
+            PERMISSION_READ_CONTACTS
+        )
+    }
+
+    private fun requestPermission(permission: String, logTitle: String) {
+        permissionManager.requestPermission(permission)
             .onGranted {
-                showToast("Camera: granted")
+                showLog(logTitle, STATUS_GRANTED)
             }.onDenied {
-                showToast("Camera: denied")
+                showLog(logTitle, STATUS_DENIED)
             }.onAutoDenied {
-                showToast("Camera: auto denied")
-            }
-        permissionManager.requestPermission(Manifest.permission.READ_CONTACTS)
-            .onGranted {
-                showToast("Contacts: granted")
-            }.onDenied {
-                showToast("Contacts: denied")
-            }.onAutoDenied {
-                showToast("Contacts: auto denied")
+                showLog(logTitle, STATUS_AUTO_DENIED)
             }
     }
 
-    private fun showToast(text: String) {
-        componentCoroutineScope().launch {
-            showToastEvent.emit(text)
+    private fun showLog(title: String, log: String) {
+        logsState.value = logsState.value.toMutableList().apply {
+            add(
+                LogData("${getTimeString()}| $title $log")
+            )
         }
+    }
+
+    private val timePattern = "HH:mm:ss"
+
+    private fun getTimeString(): String {
+        val formatter = SimpleDateFormat(timePattern, Locale.getDefault())
+        return formatter.format(Date(System.now().toEpochMilliseconds()))
     }
 }

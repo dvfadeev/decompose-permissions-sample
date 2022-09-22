@@ -1,10 +1,10 @@
 package com.decomposepermissions.home.ui
 
-import kotlinx.coroutines.flow.MutableSharedFlow
+import androidx.compose.runtime.MutableState
 
 interface HomeComponent {
 
-    val showToastEvent: MutableSharedFlow<String>
+    val logsState: MutableState<List<LogData>>
 
     fun onRequestPermissionClick()
 
