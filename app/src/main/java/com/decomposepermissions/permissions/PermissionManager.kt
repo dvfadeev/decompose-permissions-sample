@@ -24,11 +24,11 @@ class PermissionManager {
 
     private var activity: ComponentActivity? = null
 
-    private var activityResultLauncher: ActivityResultLauncher<Array<String>>? = null
+    private var activityResultLauncher: ActivityResultLauncher<String>? = null
 
     private val permissionQueueState = MutableStateFlow(PermissionQueue())
 
-    private val permissionsResultFlow: MutableSharedFlow<Map<String, Boolean>> = MutableSharedFlow()
+    private val permissionsResultFlow: MutableSharedFlow<Boolean> = MutableSharedFlow()
 
     private var permissionCollectJob: Job? = null
 
@@ -46,7 +46,7 @@ class PermissionManager {
     fun attachActivity(activity: ComponentActivity) {
         this.activity = activity
         activityResultLauncher =
-            activity.registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
+            activity.registerForActivityResult(ActivityResultContracts.RequestPermission()) {
                 scope?.launch {
                     permissionsResultFlow.emit(it)
                 }
@@ -103,7 +103,7 @@ class PermissionManager {
         private var permissionQueueJob: Job? = scope?.launch {
             permissionQueueState.collect { queue ->
                 if (queue.peek() == permission) {
-                    activityResultLauncher?.launch(arrayOf(permission))
+                    activityResultLauncher?.launch(permission)
                     processPermissionsResult()
                 }
             }
@@ -160,15 +160,8 @@ class PermissionManager {
                     return@launch
                 }
                 permissionsResultFlow.collect {
-                    if (it.isEmpty()) {
-                        return@collect
-                    }
-                    if (it[permission] == null) {
-                        return@collect
-                    }
-
                     removeFromQueue()
-                    if (it[permission] == true) {
+                    if (it) {
                         successAction?.invoke()
                     } else {
                         val isNeverAskAgain = !isFirstRun && !isGranted && !isShowRationale
