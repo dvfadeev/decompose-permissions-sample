@@ -164,7 +164,7 @@ class PermissionManager {
                     if (it) {
                         successAction?.invoke()
                     } else {
-                        val isNeverAskAgain = !isFirstRun && !isGranted && !isShowRationale
+                        val isNeverAskAgain = !isFirstRun && !isShowRationale
                         if (isNeverAskAgain) {
                             autoDeniedAction?.invoke()
                         } else {
