@@ -81,4 +81,3 @@ val MaterialTheme.appTypography: AppTypography
 private fun TextStyle.withDefaultFontFamily(default: FontFamily): TextStyle {
     return if (fontFamily != null) this else copy(fontFamily = default)
 }
-

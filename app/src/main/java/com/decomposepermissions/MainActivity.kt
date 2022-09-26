@@ -7,7 +7,6 @@ import com.arkivanov.decompose.ExperimentalDecomposeApi
 import com.arkivanov.decompose.defaultComponentContext
 import com.arkivanov.essenty.lifecycle.asEssentyLifecycle
 import com.arkivanov.essenty.lifecycle.doOnDestroy
-import com.decomposepermissions.permissions.PermissionManager
 import com.decomposepermissions.root.createRootComponent
 import com.decomposepermissions.root.ui.RootComponent
 import com.decomposepermissions.root.ui.RootUi

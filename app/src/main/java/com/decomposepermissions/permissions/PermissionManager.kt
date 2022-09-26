@@ -24,9 +24,10 @@ import kotlin.coroutines.resume
 
 /**
  * A manager that allows you to request permissions and process their result.
- * When multiple permissions are requested, forms a queue and processes them sequentially.
  *
- * Must be tied to current activity.
+ * When a permission request is called multiple times, a queue is formed and processed sequentially.
+ *
+ * Must be tied to [ActivityProvider].
  */
 class PermissionManager(
     private val activityProvider: ActivityProvider,
@@ -48,10 +49,14 @@ class PermissionManager(
         }
     }
 
+    /**
+     * Request single permission
+     * Should be called from coroutine
+     */
     suspend fun requestPermission(permission: String): Result {
         val activity = activityProvider.awaitActivity()
         val scope = activity.lifecycleScope
-        if (isPermissionGranted(permission)) {
+        if (checkPermissionGranted(permission)) {
             return Granted
         }
         return operationQueue.processOperation(scope) {
@@ -59,6 +64,10 @@ class PermissionManager(
         }
     }
 
+    /**
+     * Request multiply permission
+     * Should be called from coroutine
+     */
     suspend fun requestPermissions(permissions: List<String>): Result {
         val scope = activityProvider.awaitActivity().lifecycleScope
         return operationQueue.processOperation(scope) {
@@ -66,12 +75,20 @@ class PermissionManager(
         }
     }
 
-    fun isPermissionGranted(permission: String) = ContextCompat.checkSelfPermission(
+    /**
+     * Check if the current permission has been granted
+     */
+    fun checkPermissionGranted(permission: String) = ContextCompat.checkSelfPermission(
         applicationContext,
         permission
     ) == PackageManager.PERMISSION_GRANTED
 
-    fun shouldShowRationale(permission: String) =
+    /**
+     * Check if should show rationale dialog.
+     * In an educational UI, explain to the user why your app requires this
+     * permission for a specific feature to behave as expected.
+     */
+    fun checkShouldShowRationale(permission: String) =
         activityProvider.activity?.shouldShowRequestPermissionRationale(permission) ?: false
 
     private class PermissionRequestExecutor {
@@ -195,8 +212,15 @@ class PermissionManager(
 
     sealed class PermissionResult : Result() {
 
+        /**
+         * Permission has been granted by user
+         */
         object Granted : PermissionResult()
 
+        /**
+         * Permission has been denied by user
+         * If [isPermanently] == true permission was denied automatically (user chose "Never ask again")
+         */
         class Denied(val isPermanently: Boolean) : PermissionResult()
     }
 
