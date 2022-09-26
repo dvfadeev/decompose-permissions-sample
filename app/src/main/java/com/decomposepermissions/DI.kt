@@ -12,7 +12,7 @@ val allModules = listOf(
     module {
         single { CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate) }
         single { ActivityProvider() }
-        single { PermissionManager() }
+        single { PermissionManager(get()) }
     },
     rootModule
 )

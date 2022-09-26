@@ -24,12 +24,9 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         val activityProvider = application.koin.get<ActivityProvider>()
-        val permissionManager = application.koin.get<PermissionManager>()
         activityProvider.attachActivity(this)
-        permissionManager.attachActivity(this)
         lifecycle.asEssentyLifecycle().doOnDestroy {
             activityProvider.detachActivity()
-            permissionManager.detachActivity()
         }
 
         val componentFactory = application.koin.get<ComponentFactory>()

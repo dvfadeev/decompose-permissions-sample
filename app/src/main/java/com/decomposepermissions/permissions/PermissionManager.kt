@@ -9,9 +9,11 @@ import androidx.lifecycle.LifecycleCoroutineScope
 import androidx.lifecycle.lifecycleScope
 import com.decomposepermissions.permissions.PermissionManager.Result.Denied
 import com.decomposepermissions.permissions.PermissionManager.Result.Granted
+import com.decomposepermissions.utils.ActivityProvider
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
@@ -25,59 +27,37 @@ import kotlin.coroutines.resume
  *
  * Must be tied to current activity.
  */
-class PermissionManager {
+class PermissionManager(private val activityProvider: ActivityProvider) {
 
     private val executor = PermissionRequestExecutor()
-
     private val operationQueue = OperationQueue()
 
-    private var activity: ComponentActivity? = null
-
-    private var activityResultLauncher: ActivityResultLauncher<String>? = null
-
-    private val permissionsResultFlow: MutableSharedFlow<Boolean> = MutableSharedFlow()
-
-    private val scope: LifecycleCoroutineScope?
-        get() = activity?.lifecycleScope
-
-    /**
-     * [PermissionManager] tied to [ComponentActivity].
-     *
-     * This method must be called during activity creation.
-     */
-    fun attachActivity(activity: ComponentActivity) {
-        executor.attachActivity(activity)
-        this.activity = activity
-        activityResultLauncher =
-            activity.registerForActivityResult(ActivityResultContracts.RequestPermission()) {
-                scope?.launch {
-                    permissionsResultFlow.emit(it)
+    init {
+        CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate).launch {
+            activityProvider.activityStateFlow.collect {
+                if (it != null) {
+                    executor.attachActivity(it)
                 }
             }
+        }
     }
 
-    /**
-     * [PermissionManager] tied to [ComponentActivity].
-     *
-     * This method must be called during activity destruction.
-     */
-    fun detachActivity() {
-        this.activity = null
-    }
+    suspend fun requestPermission(permission: String): Result {
+        val activity = activityProvider.awaitActivity()
+        val scope = activity.lifecycleScope
 
-    suspend fun requestPermission(permission: String): Result = coroutineScope {
-        val isGranted = activity?.let {
+        val isGranted = activity.let {
             ContextCompat.checkSelfPermission(
                 it,
                 permission
             ) == PackageManager.PERMISSION_GRANTED
-        } ?: false
-
-        if (isGranted) {
-            return@coroutineScope Granted
         }
 
-        return@coroutineScope operationQueue.processOperation(scope!!) {
+        if (isGranted) {
+            return Granted
+        }
+
+        return operationQueue.processOperation(scope) {
             (executor.process(permission))
         }
     }
