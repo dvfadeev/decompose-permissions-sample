@@ -1,5 +1,6 @@
 package com.decomposepermissions.permissions
 
+import android.content.Context
 import android.content.pm.PackageManager
 import androidx.activity.ComponentActivity
 import androidx.activity.result.ActivityResultLauncher
@@ -27,7 +28,10 @@ import kotlin.coroutines.resume
  *
  * Must be tied to current activity.
  */
-class PermissionManager(private val activityProvider: ActivityProvider) {
+class PermissionManager(
+    private val activityProvider: ActivityProvider,
+    private val applicationContext: Context
+) {
 
     private val permissionExecutor = PermissionRequestExecutor()
     private val multiplePermissionsExecutor = MultiplePermissionsRequestExecutor()
@@ -47,16 +51,9 @@ class PermissionManager(private val activityProvider: ActivityProvider) {
     suspend fun requestPermission(permission: String): Result {
         val activity = activityProvider.awaitActivity()
         val scope = activity.lifecycleScope
-        val isGranted = activity.let {
-            ContextCompat.checkSelfPermission(
-                it,
-                permission
-            ) == PackageManager.PERMISSION_GRANTED
-        }
-        if (isGranted) {
+        if (isPermissionGranted(permission)) {
             return Granted
         }
-
         return operationQueue.processOperation(scope) {
             (permissionExecutor.process(permission))
         }
@@ -68,6 +65,14 @@ class PermissionManager(private val activityProvider: ActivityProvider) {
             (multiplePermissionsExecutor.process(permissions))
         }
     }
+
+    fun isPermissionGranted(permission: String) = ContextCompat.checkSelfPermission(
+        applicationContext,
+        permission
+    ) == PackageManager.PERMISSION_GRANTED
+
+    fun shouldShowRationale(permission: String) =
+        activityProvider.activity?.shouldShowRequestPermissionRationale(permission) ?: false
 
     private class PermissionRequestExecutor {
 
@@ -197,5 +202,19 @@ class PermissionManager(private val activityProvider: ActivityProvider) {
 
     class MultiplePermissionResult(
         val value: Map<String, PermissionResult>
-    ) : Result()
+    ) : Result() {
+
+        val isEmpty: Boolean
+            get() = value.isEmpty()
+
+        val isAllGranted: Boolean
+            get() = if (value.isNotEmpty()) {
+                value.filter { it.value is Granted }.size == value.size
+            } else false
+
+        val isAllDenied: Boolean
+            get() = if (value.isNotEmpty()) {
+                value.filter { it.value is Denied }.size == value.size
+            } else false
+    }
 }
