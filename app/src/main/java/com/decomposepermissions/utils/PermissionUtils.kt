@@ -2,21 +2,18 @@ package com.decomposepermissions.utils
 
 import com.decomposepermissions.permissions.PermissionManager
 
-private const val STATUS_GRANTED = "Granted"
-private const val STATUS_DENIED = "Denied"
-private const val STATUS_PERMANENTLY_DENIED = "Denied Permanently"
-
-const val PERMISSION_READ_STORAGE = "ReadStorage"
-const val PERMISSION_CAMERA = "Camera"
-const val PERMISSION_READ_CONTACTS = "ReadContacts"
-const val PERMISSION_READ_SMS = "ReadSms"
-const val PERMISSION_ACCESS_LOCATION = "AccessLocation"
+private const val STATUS_GRANTED = "GRANTED"
+private const val STATUS_DENIED = "DENIED"
+private const val STATUS_PERMANENTLY_DENIED = "DENIED PERMANENTLY"
 
 fun PermissionManager.Result.toMessage(): String = when (this) {
-    PermissionManager.Result.Granted -> STATUS_GRANTED
-    is PermissionManager.Result.Denied -> if (isPermanently) {
+    PermissionManager.PermissionResult.Granted -> STATUS_GRANTED
+    is PermissionManager.PermissionResult.Denied -> if (isPermanently) {
         STATUS_PERMANENTLY_DENIED
     } else {
         STATUS_DENIED
+    }
+    is PermissionManager.MultiplePermissionResult -> value.entries.joinToString {
+        "${it.key} ${it.value.toMessage()}"
     }
 }

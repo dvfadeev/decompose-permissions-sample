@@ -6,7 +6,6 @@ import androidx.compose.runtime.mutableStateOf
 import com.arkivanov.decompose.ComponentContext
 import com.decomposepermissions.permissions.PermissionManager
 import com.decomposepermissions.utils.LogData
-import com.decomposepermissions.utils.PERMISSION_ACCESS_LOCATION
 import com.decomposepermissions.utils.componentCoroutineScope
 import com.decomposepermissions.utils.toMessage
 import kotlinx.coroutines.launch
@@ -34,7 +33,7 @@ class RealFirstPaneComponent(
     private fun showLog(log: String) {
         logsState.value = logsState.value.toMutableList().apply {
             add(
-                LogData.build(PERMISSION_ACCESS_LOCATION, log)
+                LogData.build(Manifest.permission.ACCESS_COARSE_LOCATION, log)
             )
         }
     }

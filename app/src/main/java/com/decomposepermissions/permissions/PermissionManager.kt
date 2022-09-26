@@ -7,8 +7,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleCoroutineScope
 import androidx.lifecycle.lifecycleScope
-import com.decomposepermissions.permissions.PermissionManager.Result.Denied
-import com.decomposepermissions.permissions.PermissionManager.Result.Granted
+import com.decomposepermissions.permissions.PermissionManager.PermissionResult.Denied
+import com.decomposepermissions.permissions.PermissionManager.PermissionResult.Granted
 import com.decomposepermissions.utils.ActivityProvider
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -29,14 +29,16 @@ import kotlin.coroutines.resume
  */
 class PermissionManager(private val activityProvider: ActivityProvider) {
 
-    private val executor = PermissionRequestExecutor()
+    private val permissionExecutor = PermissionRequestExecutor()
+    private val multiplePermissionsExecutor = MultiplePermissionsRequestExecutor()
     private val operationQueue = OperationQueue()
 
     init {
         CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate).launch {
             activityProvider.activityStateFlow.collect {
                 if (it != null) {
-                    executor.attachActivity(it)
+                    permissionExecutor.attachActivity(it)
+                    multiplePermissionsExecutor.attachActivity(it)
                 }
             }
         }
@@ -45,24 +47,29 @@ class PermissionManager(private val activityProvider: ActivityProvider) {
     suspend fun requestPermission(permission: String): Result {
         val activity = activityProvider.awaitActivity()
         val scope = activity.lifecycleScope
-
         val isGranted = activity.let {
             ContextCompat.checkSelfPermission(
                 it,
                 permission
             ) == PackageManager.PERMISSION_GRANTED
         }
-
         if (isGranted) {
             return Granted
         }
 
         return operationQueue.processOperation(scope) {
-            (executor.process(permission))
+            (permissionExecutor.process(permission))
         }
     }
 
-    class PermissionRequestExecutor {
+    suspend fun requestPermissions(permissions: List<String>): Result {
+        val scope = activityProvider.awaitActivity().lifecycleScope
+        return operationQueue.processOperation(scope) {
+            (multiplePermissionsExecutor.process(permissions))
+        }
+    }
+
+    private class PermissionRequestExecutor {
 
         private var activityResultLauncher: ActivityResultLauncher<String>? = null
 
@@ -83,7 +90,7 @@ class PermissionManager(private val activityProvider: ActivityProvider) {
             this.activity = activity
         }
 
-        suspend fun process(permission: String): Result {
+        suspend fun process(permission: String): PermissionResult {
             activityResultLauncher?.launch(permission)
             return if (permissionsResultFlow.first()) {
                 Granted
@@ -94,14 +101,59 @@ class PermissionManager(private val activityProvider: ActivityProvider) {
         }
     }
 
-    class OperationQueue {
+    private class MultiplePermissionsRequestExecutor {
+
+        private var activityResultLauncher: ActivityResultLauncher<Array<String>>? = null
+
+        private val permissionsResultFlow: MutableSharedFlow<Map<String, Boolean>> = MutableSharedFlow()
+
+        private lateinit var scope: LifecycleCoroutineScope
+
+        private var activity: ComponentActivity? = null
+
+        fun attachActivity(activity: ComponentActivity) {
+            scope = activity.lifecycleScope
+            activityResultLauncher =
+                activity.registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
+                    scope.launch {
+                        permissionsResultFlow.emit(it)
+                    }
+
+                }
+            this.activity = activity
+        }
+
+        suspend fun process(permissions: List<String>): MultiplePermissionResult {
+            val permissionResults = mutableMapOf<String, PermissionResult>()
+
+            activityResultLauncher?.launch(permissions.toTypedArray())
+
+            permissionsResultFlow.first().forEach {
+                val result = if (it.value) {
+                    Granted
+                } else {
+                    val rational = activity?.shouldShowRequestPermissionRationale(it.key) == false
+                    Denied(rational)
+                }
+                permissionResults[it.key] = result
+            }
+            return MultiplePermissionResult(
+                value = permissionResults
+            )
+        }
+    }
+
+    private class OperationQueue {
 
         private var queue: MutableStateFlow<List<suspend () -> Result>> = MutableStateFlow(listOf())
 
         private val queueValue
             get() = queue.value
 
-        suspend fun processOperation(scope: CoroutineScope, operation: suspend () -> Result): Result {
+        suspend fun processOperation(
+            scope: CoroutineScope,
+            operation: suspend () -> Result
+        ): Result {
             put(operation)
 
             var queueCoroutine: Job? = null
@@ -134,10 +186,16 @@ class PermissionManager(private val activityProvider: ActivityProvider) {
         }
     }
 
-    sealed class Result {
+    sealed class Result
 
-        object Granted : Result()
+    sealed class PermissionResult : Result() {
 
-        class Denied(val isPermanently: Boolean) : Result()
+        object Granted : PermissionResult()
+
+        class Denied(val isPermanently: Boolean) : PermissionResult()
     }
+
+    class MultiplePermissionResult(
+        val value: Map<String, PermissionResult>
+    ) : Result()
 }
