@@ -7,24 +7,27 @@ import com.arkivanov.decompose.ComponentContext
 import com.decomposepermissions.permissions.PermissionManager
 import com.decomposepermissions.utils.LogData
 import com.decomposepermissions.utils.PERMISSION_READ_SMS
-import com.decomposepermissions.utils.STATUS_AUTO_DENIED
-import com.decomposepermissions.utils.STATUS_DENIED
-import com.decomposepermissions.utils.STATUS_GRANTED
+import com.decomposepermissions.utils.componentCoroutineScope
+import com.decomposepermissions.utils.toMessage
+import kotlinx.coroutines.launch
 
 class RealSecondPaneComponent(
     componentContext: ComponentContext,
-    permissionManager: PermissionManager
+    private val permissionManager: PermissionManager
 ) : ComponentContext by componentContext, SecondPaneComponent {
+
+    private val coroutineScope = componentCoroutineScope()
 
     override val logsState: MutableState<List<LogData>> = mutableStateOf(listOf())
 
     init {
-        permissionManager.requestPermission(Manifest.permission.SEND_SMS).onGranted {
-            showLog(STATUS_GRANTED)
-        }.onDenied {
-            showLog(STATUS_DENIED)
-        }.onAutoDenied {
-            showLog(STATUS_AUTO_DENIED)
+        requestPermission()
+    }
+
+    private fun requestPermission() {
+        coroutineScope.launch {
+            val message = permissionManager.requestPermission(Manifest.permission.SEND_SMS).toMessage()
+            showLog(message)
         }
     }
 

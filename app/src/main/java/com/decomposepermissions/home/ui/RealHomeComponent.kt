@@ -12,9 +12,9 @@ import com.decomposepermissions.utils.LogData
 import com.decomposepermissions.utils.PERMISSION_CAMERA
 import com.decomposepermissions.utils.PERMISSION_READ_CONTACTS
 import com.decomposepermissions.utils.PERMISSION_READ_STORAGE
-import com.decomposepermissions.utils.STATUS_AUTO_DENIED
-import com.decomposepermissions.utils.STATUS_DENIED
-import com.decomposepermissions.utils.STATUS_GRANTED
+import com.decomposepermissions.utils.componentCoroutineScope
+import com.decomposepermissions.utils.toMessage
+import kotlinx.coroutines.launch
 
 class RealHomeComponent(
     componentContext: ComponentContext,
@@ -22,6 +22,8 @@ class RealHomeComponent(
     private val permissionManager: PermissionManager,
     private val onOutput: (HomeComponent.Output) -> Unit
 ) : ComponentContext by componentContext, HomeComponent {
+
+    private val coroutineScope = componentCoroutineScope()
 
     override val logsState: MutableState<List<LogData>> = mutableStateOf(listOf())
 
@@ -54,14 +56,10 @@ class RealHomeComponent(
     }
 
     private fun requestPermission(permission: String, logTitle: String) {
-        permissionManager.requestPermission(permission)
-            .onGranted {
-                showLog(logTitle, STATUS_GRANTED)
-            }.onDenied {
-                showLog(logTitle, STATUS_DENIED)
-            }.onAutoDenied {
-                showLog(logTitle, STATUS_AUTO_DENIED)
-            }
+        coroutineScope.launch {
+            val message = permissionManager.requestPermission(permission).toMessage()
+            showLog(logTitle, message)
+        }
     }
 
     private fun showLog(title: String, log: String) {

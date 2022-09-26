@@ -1,7 +1,5 @@
 package com.decomposepermissions.permissions
 
-import android.content.Context
-import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import androidx.activity.ComponentActivity
 import androidx.activity.result.ActivityResultLauncher
@@ -9,10 +7,17 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleCoroutineScope
 import androidx.lifecycle.lifecycleScope
+import com.decomposepermissions.permissions.PermissionManager.Result.Denied
+import com.decomposepermissions.permissions.PermissionManager.Result.Granted
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlin.coroutines.resume
 
 /**
  * A manager that allows you to request permissions and process their result.
@@ -22,18 +27,15 @@ import kotlinx.coroutines.launch
  */
 class PermissionManager {
 
+    private val executor = PermissionRequestExecutor()
+
+    private val operationQueue = OperationQueue()
+
     private var activity: ComponentActivity? = null
 
     private var activityResultLauncher: ActivityResultLauncher<String>? = null
 
-    private val permissionQueueState = MutableStateFlow(PermissionQueue())
-
     private val permissionsResultFlow: MutableSharedFlow<Boolean> = MutableSharedFlow()
-
-    private var permissionCollectJob: Job? = null
-
-    private val prefs: SharedPreferences?
-        get() = activity?.getSharedPreferences("prefs", Context.MODE_PRIVATE)
 
     private val scope: LifecycleCoroutineScope?
         get() = activity?.lifecycleScope
@@ -44,6 +46,7 @@ class PermissionManager {
      * This method must be called during activity creation.
      */
     fun attachActivity(activity: ComponentActivity) {
+        executor.attachActivity(activity)
         this.activity = activity
         activityResultLauncher =
             activity.registerForActivityResult(ActivityResultContracts.RequestPermission()) {
@@ -62,148 +65,99 @@ class PermissionManager {
         this.activity = null
     }
 
-    /**
-     * Request permission by name from Manifest.permission.
-     */
-    fun requestPermission(
-        permission: String
-    ): Result {
-        scope?.launch {
-            permissionQueueState.emit(
-                permissionQueueState.value.copy().apply {
-                    insertPermission(permission)
-                }
-            )
-        }
-
+    suspend fun requestPermission(permission: String): Result = coroutineScope {
         val isGranted = activity?.let {
             ContextCompat.checkSelfPermission(
                 it,
                 permission
             ) == PackageManager.PERMISSION_GRANTED
         } ?: false
-        val isShowRationale = activity?.shouldShowRequestPermissionRationale(permission) ?: false
 
-        return Result(
-            permission,
-            isGranted = isGranted,
-            isShowRationale = isShowRationale
-        )
+        if (isGranted) {
+            return@coroutineScope Granted
+        }
+
+        return@coroutineScope operationQueue.processOperation(scope!!) {
+            (executor.process(permission))
+        }
     }
 
-    inner class Result(
-        private val permission: String,
-        private var isGranted: Boolean,
-        private var isShowRationale: Boolean
-    ) {
-        private var successAction: (() -> Unit)? = null
-        private var deniedAction: (() -> Unit)? = null
-        private var autoDeniedAction: (() -> Unit)? = null
+    class PermissionRequestExecutor {
 
-        private var permissionQueueJob: Job? = scope?.launch {
-            permissionQueueState.collect { queue ->
-                if (queue.peek() == permission) {
-                    activityResultLauncher?.launch(permission)
-                    processPermissionsResult()
+        private var activityResultLauncher: ActivityResultLauncher<String>? = null
+
+        private val permissionsResultFlow: MutableSharedFlow<Boolean> = MutableSharedFlow()
+
+        private lateinit var scope: LifecycleCoroutineScope
+
+        private var activity: ComponentActivity? = null
+
+        fun attachActivity(activity: ComponentActivity) {
+            scope = activity.lifecycleScope
+            activityResultLauncher = activity.registerForActivityResult(ActivityResultContracts.RequestPermission()) {
+                scope.launch {
+                    permissionsResultFlow.emit(it)
                 }
+
+            }
+            this.activity = activity
+        }
+
+        suspend fun process(permission: String): Result {
+            activityResultLauncher?.launch(permission)
+            return if (permissionsResultFlow.first()) {
+                Granted
+            } else {
+                val rational = activity?.shouldShowRequestPermissionRationale(permission) == false
+                Denied(rational)
             }
         }
+    }
 
-        private var isFirstRun: Boolean
-            get() = prefs?.getBoolean(permission, true) ?: true
-            set(value) {
-                prefs?.edit()?.apply {
-                    putBoolean(permission, value)
-                    apply()
-                }
-            }
+    class OperationQueue {
 
-        /**
-         * Perform given action when permission is granted.
-         *
-         * Returns the original Result unchanged.
-         */
-        fun onGranted(action: () -> Unit): Result {
-            successAction = action
-            if (isGranted) {
-                action()
-            }
-            return this
-        }
+        private var queue: MutableStateFlow<List<suspend () -> Result>> = MutableStateFlow(listOf())
 
-        /**
-         * Perform given action when permission is denied.
-         *
-         * Returns the original Result unchanged.
-         */
-        fun onDenied(action: () -> Unit): Result {
-            deniedAction = action
-            return this
-        }
+        private val queueValue
+            get() = queue.value
 
-        /**
-         * Perform given action when permission is denied automatically.
-         * In cases where the user has selected "Never ask again".
-         *
-         * Returns the original Result unchanged.
-         */
-        fun onAutoDenied(action: () -> Unit): Result {
-            autoDeniedAction = action
-            return this
-        }
+        suspend fun processOperation(scope: CoroutineScope, operation: suspend () -> Result): Result {
+            put(operation)
 
-        private fun processPermissionsResult() {
-            permissionCollectJob?.cancel()
-            permissionCollectJob = scope?.launch {
-                if (isGranted) {
-                    removeFromQueue()
-                    return@launch
-                }
-                permissionsResultFlow.collect {
-                    removeFromQueue()
-                    if (it) {
-                        successAction?.invoke()
-                    } else {
-                        val isNeverAskAgain = !isFirstRun && !isShowRationale
-                        if (isNeverAskAgain) {
-                            autoDeniedAction?.invoke()
-                        } else {
-                            deniedAction?.invoke()
-                        }
-                        if (isFirstRun) {
-                            isFirstRun = false
+            var queueCoroutine: Job? = null
+            val currentOperation = suspendCancellableCoroutine { continuation ->
+                queueCoroutine = scope.launch {
+                    queue.collect {
+                        if (it.firstOrNull() == operation && continuation.isActive) {
+                            continuation.resume(operation)
                         }
                     }
                 }
             }
+
+            val result = currentOperation.invoke()
+            remove(operation)
+            queueCoroutine?.cancel()
+            return result
         }
 
-        private suspend fun removeFromQueue() {
-            permissionQueueJob?.cancel()
-            permissionQueueState.emit(
-                permissionQueueState.value.copy().apply {
-                    removePermission(permission)
-                }
-            )
+        private suspend fun put(operation: suspend () -> Result) {
+            queue.emit(queueValue.toMutableList().apply {
+                add(operation)
+            })
+        }
+
+        private suspend fun remove(operation: suspend () -> Result) {
+            queue.emit(queueValue.toMutableList().apply {
+                remove(operation)
+            })
         }
     }
 
-    data class PermissionQueue(
-        private var permissions: List<String> = listOf()
-    ) {
+    sealed class Result {
 
-        fun insertPermission(permission: String) {
-            permissions = permissions.toMutableList().apply {
-                add(permission)
-            }
-        }
+        object Granted : Result()
 
-        fun removePermission(permission: String) {
-            permissions = permissions.toMutableList().apply {
-                remove(permission)
-            }
-        }
-
-        fun peek() = permissions.firstOrNull()
+        class Denied(val isPermanently: Boolean) : Result()
     }
 }
