@@ -99,13 +99,15 @@ private fun Content(
             userScrollEnabled = false,
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .heightIn(0.dp, 150.dp)
+                .heightIn(0.dp, 200.dp)
                 .graphicsLayer { alpha = 0.99f }
                 .drawWithContent {
-                    val colors = listOf(Color.Transparent, Color.Black)
                     drawContent()
                     drawRect(
-                        brush = Brush.verticalGradient(colors),
+                        brush = Brush.verticalGradient(
+                            0.0f to Color.Transparent,
+                            0.3f to Color.Black
+                        ),
                         blendMode = BlendMode.DstIn
                     )
                 }

@@ -9,12 +9,11 @@ import com.arkivanov.decompose.ComponentContext
 import com.decomposepermissions.permissions.PermissionManager
 import com.decomposepermissions.utils.ActivityProvider
 import com.decomposepermissions.utils.LogData
-import com.decomposepermissions.utils.PERMISSION_CAMERA
-import com.decomposepermissions.utils.PERMISSION_READ_CONTACTS
-import com.decomposepermissions.utils.PERMISSION_READ_STORAGE
-import com.decomposepermissions.utils.STATUS_AUTO_DENIED
-import com.decomposepermissions.utils.STATUS_DENIED
-import com.decomposepermissions.utils.STATUS_GRANTED
+import com.decomposepermissions.utils.componentCoroutineScope
+import com.decomposepermissions.utils.toMessage
+import kotlinx.coroutines.launch
+
+const val PERMISSION_MULTIPLY = "MultiplyPermission:"
 
 class RealHomeComponent(
     componentContext: ComponentContext,
@@ -23,24 +22,28 @@ class RealHomeComponent(
     private val onOutput: (HomeComponent.Output) -> Unit
 ) : ComponentContext by componentContext, HomeComponent {
 
+    private val coroutineScope = componentCoroutineScope()
+
     override val logsState: MutableState<List<LogData>> = mutableStateOf(listOf())
 
     override fun onRequestPermissionClick() {
-        requestPermission(
-            Manifest.permission.READ_EXTERNAL_STORAGE,
-            PERMISSION_READ_STORAGE
-        )
+        coroutineScope.launch {
+            val permission = Manifest.permission.READ_EXTERNAL_STORAGE
+            val message = permissionManager.requestPermission(permission).toMessage()
+            showLog(permission, message)
+        }
     }
 
     override fun onRequestMultiplePermission() {
-        requestPermission(
-            Manifest.permission.CAMERA,
-            PERMISSION_CAMERA
-        )
-        requestPermission(
-            Manifest.permission.READ_CONTACTS,
-            PERMISSION_READ_CONTACTS
-        )
+        coroutineScope.launch {
+            val message = permissionManager.requestPermissions(
+                listOf(
+                    Manifest.permission.CAMERA,
+                    Manifest.permission.READ_CONTACTS
+                )
+            ).toMessage()
+            showLog(PERMISSION_MULTIPLY, message)
+        }
     }
 
     override fun onRequestPermissionFromChild() {
@@ -51,17 +54,6 @@ class RealHomeComponent(
         activityProvider.activity?.let {
             (it.getSystemService(ACTIVITY_SERVICE) as ActivityManager).clearApplicationUserData()
         }
-    }
-
-    private fun requestPermission(permission: String, logTitle: String) {
-        permissionManager.requestPermission(permission)
-            .onGranted {
-                showLog(logTitle, STATUS_GRANTED)
-            }.onDenied {
-                showLog(logTitle, STATUS_DENIED)
-            }.onAutoDenied {
-                showLog(logTitle, STATUS_AUTO_DENIED)
-            }
     }
 
     private fun showLog(title: String, log: String) {
