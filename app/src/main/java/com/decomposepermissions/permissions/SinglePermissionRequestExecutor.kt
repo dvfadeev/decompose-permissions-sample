@@ -8,32 +8,34 @@ import com.decomposepermissions.permissions.PermissionManager.SinglePermissionRe
 import com.decomposepermissions.permissions.PermissionManager.SinglePermissionResult.Denied
 import com.decomposepermissions.permissions.PermissionManager.SinglePermissionResult.Granted
 import com.decomposepermissions.utils.ActivityProvider
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.launch
 
 internal class SinglePermissionRequestExecutor(
     private val activityProvider: ActivityProvider
 ) {
-    private var activityResultLauncher: ActivityResultLauncher<String>? = null
-    private val permissionsResultFlow: MutableSharedFlow<Boolean> = MutableSharedFlow()
+    private var activityResultLauncher = MutableStateFlow<ActivityResultLauncher<String>?>(null)
+    private val permissionsResultFlow = MutableSharedFlow<Boolean?>()
 
     init {
         CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate).launch {
             activityProvider.activityStateFlow.collect {
                 if (it != null) {
                     registerLauncher(it)
+                } else {
+                    unregisterLauncher()
                 }
             }
         }
     }
 
     suspend fun process(permission: String): SinglePermissionResult {
-        activityResultLauncher?.launch(permission)
-        return if (permissionsResultFlow.first()) {
+        activityResultLauncher.filterNotNull().first().launch(permission)
+        val granted = permissionsResultFlow.first() ?: throw CancellationException()
+        return if (granted) {
             Granted
         } else {
             val rational = activityProvider.awaitActivity().shouldShowRequestPermissionRationale(permission)
@@ -42,10 +44,16 @@ internal class SinglePermissionRequestExecutor(
     }
 
     private fun registerLauncher(activity: ComponentActivity) {
-        activityResultLauncher = activity.registerForActivityResult(ActivityResultContracts.RequestPermission()) {
+        activityResultLauncher.value = activity.registerForActivityResult(ActivityResultContracts.RequestPermission()) {
             activity.lifecycleScope.launch {
                 permissionsResultFlow.emit(it)
             }
         }
+    }
+
+    private suspend fun unregisterLauncher() {
+        activityResultLauncher.value?.unregister()
+        activityResultLauncher.value = null
+        permissionsResultFlow.emit(null)
     }
 }
