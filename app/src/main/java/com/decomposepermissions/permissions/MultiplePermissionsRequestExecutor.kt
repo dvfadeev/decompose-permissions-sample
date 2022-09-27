@@ -9,24 +9,29 @@ import com.decomposepermissions.permissions.PermissionManager.SinglePermissionRe
 import com.decomposepermissions.permissions.PermissionManager.SinglePermissionResult.Denied
 import com.decomposepermissions.permissions.PermissionManager.SinglePermissionResult.Granted
 import com.decomposepermissions.utils.ActivityProvider
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 internal class MultiplePermissionsRequestExecutor(
     private val activityProvider: ActivityProvider
 ) {
-    private var activityResultLauncher: ActivityResultLauncher<Array<String>>? = null
-    private val permissionsResultFlow: MutableSharedFlow<Map<String, Boolean>> = MutableSharedFlow()
+    private var activityResultLauncher = MutableStateFlow<ActivityResultLauncher<Array<String>>?>(null)
+    private val permissionsResultFlow = MutableSharedFlow<Map<String, Boolean>?>()
 
     init {
         CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate).launch {
             activityProvider.activityStateFlow.collect {
                 if (it != null) {
                     registerLauncher(it)
+                } else {
+                    unregisterLauncher()
                 }
             }
         }
@@ -34,8 +39,9 @@ internal class MultiplePermissionsRequestExecutor(
 
     suspend fun process(permissions: List<String>): MultiplePermissionResult {
         val permissionResults = mutableMapOf<String, SinglePermissionResult>()
-        activityResultLauncher?.launch(permissions.toTypedArray())
-        permissionsResultFlow.first().forEach {
+
+        activityResultLauncher.filterNotNull().first().launch(permissions.toTypedArray())
+        (permissionsResultFlow.first() ?: throw CancellationException()).forEach {
             val result = if (it.value) {
                 Granted
             } else {
@@ -50,11 +56,17 @@ internal class MultiplePermissionsRequestExecutor(
     }
 
     private fun registerLauncher(activity: ComponentActivity) {
-        activityResultLauncher =
+        activityResultLauncher.value =
             activity.registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
                 activity.lifecycleScope.launch {
                     permissionsResultFlow.emit(it)
                 }
             }
+    }
+
+    private suspend fun unregisterLauncher() {
+        activityResultLauncher.value?.unregister()
+        activityResultLauncher.value = null
+        permissionsResultFlow.emit(null)
     }
 }
