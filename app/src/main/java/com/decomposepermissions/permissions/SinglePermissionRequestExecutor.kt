@@ -8,11 +8,15 @@ import com.decomposepermissions.permissions.PermissionManager.SinglePermissionRe
 import com.decomposepermissions.permissions.PermissionManager.SinglePermissionResult.Denied
 import com.decomposepermissions.permissions.PermissionManager.SinglePermissionResult.Granted
 import com.decomposepermissions.utils.ActivityProvider
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 
 internal class SinglePermissionRequestExecutor(
     private val activityProvider: ActivityProvider
