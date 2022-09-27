@@ -1,11 +1,10 @@
 package com.decomposepermissions.home.ui
 
-import androidx.compose.runtime.MutableState
 import com.decomposepermissions.utils.LogData
 
 interface HomeComponent {
 
-    val logsState: MutableState<List<LogData>>
+    val logsState: List<LogData>
 
     fun onRequestPermissionClick()
 

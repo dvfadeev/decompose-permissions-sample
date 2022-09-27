@@ -3,8 +3,9 @@ package com.decomposepermissions.home.ui
 import android.Manifest
 import android.app.ActivityManager
 import android.content.Context.ACTIVITY_SERVICE
-import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import com.arkivanov.decompose.ComponentContext
 import com.decomposepermissions.permissions.PermissionManager
 import com.decomposepermissions.utils.ActivityProvider
@@ -24,7 +25,7 @@ class RealHomeComponent(
 
     private val coroutineScope = componentCoroutineScope()
 
-    override val logsState: MutableState<List<LogData>> = mutableStateOf(listOf())
+    override var logsState by mutableStateOf(listOf<LogData>())
 
     override fun onRequestPermissionClick() {
         coroutineScope.launch {
@@ -57,10 +58,6 @@ class RealHomeComponent(
     }
 
     private fun showLog(title: String, log: String) {
-        logsState.value = logsState.value.toMutableList().apply {
-            add(
-                LogData.build(title, log)
-            )
-        }
+        logsState = logsState + LogData.build(title, log)
     }
 }

@@ -3,14 +3,12 @@ package com.decomposepermissions.permissions
 import android.content.Context
 import android.content.pm.PackageManager
 import androidx.core.content.ContextCompat
-import com.decomposepermissions.permissions.PermissionManager.SinglePermissionResult.Denied
-import com.decomposepermissions.permissions.PermissionManager.SinglePermissionResult.Granted
 import com.decomposepermissions.utils.ActivityProvider
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
 /**
- * A manager that allows you to request permissions and process their result.
+ * A manager that allows to request permissions by a suspend function call.
  *
  * When a permission request is called multiple times, a queue is formed and processed sequentially.
  *
@@ -20,31 +18,30 @@ class PermissionManager(
     private val activityProvider: ActivityProvider,
     private val applicationContext: Context
 ) {
-    private val singlePermissionExecutor = SinglePermissionRequestExecutor(activityProvider)
-    private val multiplePermissionsExecutor = MultiplePermissionsRequestExecutor(activityProvider)
+    private val singlePermissionRequestExecutor = SinglePermissionRequestExecutor(activityProvider)
+    private val multiplePermissionsRequestExecutor =
+        MultiplePermissionsRequestExecutor(activityProvider)
     private val mutex = Mutex()
 
     /**
-     * Request single permission
-     * Should be called from coroutine
+     * Request single permission. Should be called from a coroutine.
      */
     suspend fun requestPermission(permission: String): SinglePermissionResult {
-        if (checkPermissionGranted(permission)) {
-            return Granted
+        if (isPermissionGranted(permission)) {
+            return SinglePermissionResult.Granted
         }
 
         return mutex.withLock {
-            singlePermissionExecutor.process(permission)
+            singlePermissionRequestExecutor.process(permission)
         }
     }
 
     /**
-     * Request multiply permission
-     * Should be called from coroutine
+     * Request multiple permissions. Should be called from a coroutine.
      */
     suspend fun requestPermissions(permissions: List<String>): MultiplePermissionResult {
         val (grantedPermissions, notGrantedPermissions) = permissions.partition {
-            checkPermissionGranted(it)
+            isPermissionGranted(it)
         }
         val grantedPermissionsResult = MultiplePermissionResult.buildGranted(grantedPermissions)
 
@@ -53,63 +50,23 @@ class PermissionManager(
         }
 
         return mutex.withLock {
-            grantedPermissionsResult + (multiplePermissionsExecutor.process(notGrantedPermissions))
+            grantedPermissionsResult + (multiplePermissionsRequestExecutor.process(
+                notGrantedPermissions
+            ))
         }
     }
 
     /**
-     * Check if the current permission has been granted
+     * Returns if a [permission] has been granted.
      */
-    fun checkPermissionGranted(permission: String) = ContextCompat.checkSelfPermission(
+    fun isPermissionGranted(permission: String) = ContextCompat.checkSelfPermission(
         applicationContext,
         permission
     ) == PackageManager.PERMISSION_GRANTED
 
     /**
-     * Check if should show rationale dialog.
-     * In an educational UI, explain to the user why your app requires this
-     * permission for a specific feature to behave as expected.
+     * Returns whether UI with rationale should be shown before requesting a permission.
      */
-    suspend fun checkShouldShowRationale(permission: String) =
+    suspend fun shouldShowRequestPermissionRationale(permission: String) =
         activityProvider.awaitActivity().shouldShowRequestPermissionRationale(permission)
-
-    sealed class SinglePermissionResult {
-
-        /**
-         * Permission has been granted by user
-         */
-        object Granted : SinglePermissionResult()
-
-        /**
-         * Permission has been denied by user
-         * If [isPermanently] == true permission was denied automatically (user chose "Never ask again")
-         */
-        class Denied(val isPermanently: Boolean) : SinglePermissionResult()
-    }
-
-    class MultiplePermissionResult(
-        val value: Map<String, SinglePermissionResult>
-    ) {
-
-        companion object {
-            fun buildGranted(permissions: List<String>) = MultiplePermissionResult(
-                value = permissions.associateWith {
-                    Granted
-                }
-            )
-        }
-
-        val isEmpty: Boolean
-            get() = value.isEmpty()
-
-        val isAllGranted: Boolean
-            get() = value.isNotEmpty() && value.all { it.value is Granted }
-
-        val isAllDenied: Boolean
-            get() = value.isNotEmpty() && value.all { it.value is Denied }
-
-        operator fun plus(second: MultiplePermissionResult) = MultiplePermissionResult(
-            value = this.value + second.value
-        )
-    }
 }

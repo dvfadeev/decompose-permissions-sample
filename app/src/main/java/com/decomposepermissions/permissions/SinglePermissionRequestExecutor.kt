@@ -4,9 +4,6 @@ import androidx.activity.ComponentActivity
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.lifecycle.lifecycleScope
-import com.decomposepermissions.permissions.PermissionManager.SinglePermissionResult
-import com.decomposepermissions.permissions.PermissionManager.SinglePermissionResult.Denied
-import com.decomposepermissions.permissions.PermissionManager.SinglePermissionResult.Granted
 import com.decomposepermissions.utils.ActivityProvider
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -40,19 +37,21 @@ internal class SinglePermissionRequestExecutor(
         activityResultLauncher.filterNotNull().first().launch(permission)
         val granted = permissionsResultFlow.first() ?: throw CancellationException()
         return if (granted) {
-            Granted
+            SinglePermissionResult.Granted
         } else {
-            val rational = activityProvider.awaitActivity().shouldShowRequestPermissionRationale(permission)
-            Denied(isPermanently = !rational)
+            val rationale =
+                activityProvider.awaitActivity().shouldShowRequestPermissionRationale(permission)
+            SinglePermissionResult.Denied(permanently = !rationale)
         }
     }
 
     private fun registerLauncher(activity: ComponentActivity) {
-        activityResultLauncher.value = activity.registerForActivityResult(ActivityResultContracts.RequestPermission()) {
-            activity.lifecycleScope.launch {
-                permissionsResultFlow.emit(it)
+        activityResultLauncher.value =
+            activity.registerForActivityResult(ActivityResultContracts.RequestPermission()) {
+                activity.lifecycleScope.launch {
+                    permissionsResultFlow.emit(it)
+                }
             }
-        }
     }
 
     private suspend fun unregisterLauncher() {
