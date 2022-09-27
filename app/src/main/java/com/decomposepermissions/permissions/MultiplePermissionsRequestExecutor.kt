@@ -5,9 +5,9 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.lifecycle.lifecycleScope
 import com.decomposepermissions.permissions.PermissionManager.MultiplePermissionResult
-import com.decomposepermissions.permissions.PermissionManager.PermissionResult
-import com.decomposepermissions.permissions.PermissionManager.PermissionResult.Denied
-import com.decomposepermissions.permissions.PermissionManager.PermissionResult.Granted
+import com.decomposepermissions.permissions.PermissionManager.SinglePermissionResult
+import com.decomposepermissions.permissions.PermissionManager.SinglePermissionResult.Denied
+import com.decomposepermissions.permissions.PermissionManager.SinglePermissionResult.Granted
 import com.decomposepermissions.utils.ActivityProvider
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -33,7 +33,7 @@ internal class MultiplePermissionsRequestExecutor(
     }
 
     suspend fun process(permissions: List<String>): MultiplePermissionResult {
-        val permissionResults = mutableMapOf<String, PermissionResult>()
+        val permissionResults = mutableMapOf<String, SinglePermissionResult>()
         activityResultLauncher?.launch(permissions.toTypedArray())
         permissionsResultFlow.first().forEach {
             val result = if (it.value) {

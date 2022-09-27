@@ -4,9 +4,9 @@ import androidx.activity.ComponentActivity
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.lifecycle.lifecycleScope
-import com.decomposepermissions.permissions.PermissionManager.PermissionResult
-import com.decomposepermissions.permissions.PermissionManager.PermissionResult.Denied
-import com.decomposepermissions.permissions.PermissionManager.PermissionResult.Granted
+import com.decomposepermissions.permissions.PermissionManager.SinglePermissionResult
+import com.decomposepermissions.permissions.PermissionManager.SinglePermissionResult.Denied
+import com.decomposepermissions.permissions.PermissionManager.SinglePermissionResult.Granted
 import com.decomposepermissions.utils.ActivityProvider
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -31,7 +31,7 @@ internal class SinglePermissionRequestExecutor(
         }
     }
 
-    suspend fun process(permission: String): PermissionResult {
+    suspend fun process(permission: String): SinglePermissionResult {
         activityResultLauncher?.launch(permission)
         return if (permissionsResultFlow.first()) {
             Granted
