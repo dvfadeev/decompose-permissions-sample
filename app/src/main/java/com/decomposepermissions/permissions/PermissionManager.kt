@@ -70,8 +70,8 @@ class PermissionManager(
      * In an educational UI, explain to the user why your app requires this
      * permission for a specific feature to behave as expected.
      */
-    fun checkShouldShowRationale(permission: String) =
-        activityProvider.activity?.shouldShowRequestPermissionRationale(permission) ?: false
+    suspend fun checkShouldShowRationale(permission: String) =
+        activityProvider.awaitActivity().shouldShowRequestPermissionRationale(permission)
 
     sealed class SinglePermissionResult {
 
@@ -103,14 +103,10 @@ class PermissionManager(
             get() = value.isEmpty()
 
         val isAllGranted: Boolean
-            get() = if (value.isNotEmpty()) {
-                value.filter { it.value is Granted }.size == value.size
-            } else false
+            get() = value.isNotEmpty() && value.all { it.value is Granted }
 
         val isAllDenied: Boolean
-            get() = if (value.isNotEmpty()) {
-                value.filter { it.value is Denied }.size == value.size
-            } else false
+            get() = value.isNotEmpty() && value.all { it.value is Denied }
 
         operator fun plus(second: MultiplePermissionResult) = MultiplePermissionResult(
             value = this.value + second.value
