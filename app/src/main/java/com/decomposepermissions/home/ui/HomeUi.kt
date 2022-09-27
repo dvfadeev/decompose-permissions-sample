@@ -17,8 +17,6 @@ import androidx.compose.material.Text
 import androidx.compose.material.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
@@ -49,7 +47,7 @@ fun HomeUi(
         },
         content = {
             Content(
-                state = component.logsState,
+                logsState = component.logsState,
                 onRequestPermission = component::onRequestPermissionClick,
                 onRequestMultiplePermission = component::onRequestMultiplePermission,
                 onRequestPermissionFromChild = component::onRequestPermissionFromChild,
@@ -62,7 +60,7 @@ fun HomeUi(
 @Suppress("MagicNumber")
 @Composable
 private fun Content(
-    state: MutableState<List<LogData>>,
+    logsState: List<LogData>,
     onRequestPermission: () -> Unit,
     onRequestMultiplePermission: () -> Unit,
     onRequestPermissionFromChild: () -> Unit,
@@ -77,8 +75,14 @@ private fun Content(
             modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            MenuButton(onClick = onRequestPermission, textResource = R.string.request_permission_btn)
-            MenuButton(onClick = onRequestMultiplePermission, textResource = R.string.request_multiple_permission_btn)
+            MenuButton(
+                onClick = onRequestPermission,
+                textResource = R.string.request_permission_btn
+            )
+            MenuButton(
+                onClick = onRequestMultiplePermission,
+                textResource = R.string.request_multiple_permission_btn
+            )
             MenuButton(
                 onClick = onRequestPermissionFromChild,
                 textResource = R.string.request_permission_from_child_btn
@@ -91,8 +95,8 @@ private fun Content(
         }
 
         val scrollState = rememberLazyListState()
-        LaunchedEffect(state.value.size) {
-            scrollState.animateScrollToItem(state.value.size)
+        LaunchedEffect(logsState.size) {
+            scrollState.animateScrollToItem(logsState.size)
         }
         LazyColumn(
             state = scrollState,
@@ -112,7 +116,7 @@ private fun Content(
                     )
                 }
         ) {
-            items(state.value) {
+            items(logsState) {
                 LogContent(data = it)
             }
         }
@@ -159,11 +163,9 @@ fun HomeUiPreview() {
 class FakeHomeComponent : HomeComponent {
 
     @Suppress("MagicNumber")
-    override val logsState: MutableState<List<LogData>> = mutableStateOf(
-        MutableList(5) {
-            LogData("Sample")
-        }
-    )
+    override val logsState = List(5) {
+        LogData("Sample")
+    }
 
     override fun onRequestPermissionClick() = Unit
 

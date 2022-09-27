@@ -4,10 +4,6 @@ import androidx.activity.ComponentActivity
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.lifecycle.lifecycleScope
-import com.decomposepermissions.permissions.PermissionManager.MultiplePermissionResult
-import com.decomposepermissions.permissions.PermissionManager.SinglePermissionResult
-import com.decomposepermissions.permissions.PermissionManager.SinglePermissionResult.Denied
-import com.decomposepermissions.permissions.PermissionManager.SinglePermissionResult.Granted
 import com.decomposepermissions.utils.ActivityProvider
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -43,10 +39,11 @@ internal class MultiplePermissionsRequestExecutor(
         activityResultLauncher.filterNotNull().first().launch(permissions.toTypedArray())
         (permissionsResultFlow.first() ?: throw CancellationException()).forEach {
             val result = if (it.value) {
-                Granted
+                SinglePermissionResult.Granted
             } else {
-                val rational = activityProvider.awaitActivity().shouldShowRequestPermissionRationale(it.key)
-                Denied(isPermanently = !rational)
+                val rationale =
+                    activityProvider.awaitActivity().shouldShowRequestPermissionRationale(it.key)
+                SinglePermissionResult.Denied(permanently = !rationale)
             }
             permissionResults[it.key] = result
         }
